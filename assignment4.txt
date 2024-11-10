@@ -1,0 +1,49 @@
+% M-ary PSK Simulation
+
+% Input parameters
+M = input('Number of Symbols (M) = ');
+SNR_dB = input('SNR of M-ary PSK system in dB = ');
+
+% Convert SNR from dB to linear
+SNR = 10^(SNR_dB/10);
+
+% Generate random integers between 0 and M-1
+numSymbols = 100; % Number of symbols to simulate
+x1 = randi([0, M-1], numSymbols, 1);
+
+% Manually create M-ary PSK symbols
+theta = 2 * pi * (0:M-1) / M;    % Phase angles for M-PSK
+constellation = exp(1j * theta);  % M-PSK constellation points
+
+% Modulate by mapping integers to constellation points
+y1 = constellation(x1 + 1);       % +1 to match MATLAB's 1-based indexing
+
+% Calculate noise variance from SNR
+noiseVariance = 1 / (2 * SNR);  % Noise variance for real and imaginary parts
+
+% Add complex Gaussian noise
+noise = sqrt(noiseVariance) * (randn(size(y1)) + 1j * randn(size(y1)));
+y1n = y1 + noise;
+
+% Plot constellation diagram using scatter
+figure;
+scatter(real(y1n), imag(y1n), 'filled');
+title(sprintf('%d-PSK Constellation with SNR = %d dB', M, SNR_dB));
+xlabel('In-phase');
+ylabel('Quadrature');
+axis equal;
+
+% Demodulate by finding the closest constellation point
+y1r = zeros(numSymbols, 1);
+for k = 1:numSymbols
+    [~, idx] = min(abs(y1n(k) - constellation));  % Find closest point
+    y1r(k) = idx - 1;  % Convert back to symbol index (0 to M-1)
+end
+
+% Manually calculate symbol error rate
+num_error = sum(x1 ~= y1r);  % Count symbol errors
+er_rate = num_error / numSymbols;  % Symbol error rate
+
+% Display results
+fprintf('Number of symbol errors = %d\n', num_error);
+fprintf('Symbol error rate = %.4f\n', er_rate);
